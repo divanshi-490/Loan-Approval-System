@@ -1,0 +1,243 @@
+import customtkinter as ctk
+from tkinter import ttk, messagebox
+
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+# ================= MAIN WINDOW =================
+root = ctk.CTk()
+root.title("Smart Bank Loan System")
+root.geometry("1100x700")
+
+# ================= HEADER =================
+header = ctk.CTkFrame(root, height=60)
+header.pack(fill="x")
+
+ctk.CTkLabel(
+    header,
+    text="Loan Approval System",
+    font=("Segoe UI", 20, "bold")
+).place(relx=0.5, rely=0.5, anchor="center")
+
+# ================= MAIN CONTAINER =================
+main_container = ctk.CTkFrame(root)
+main_container.pack(fill="both", expand=True)
+
+# ================= TOP FRAME =================
+top_frame = ctk.CTkFrame(main_container)
+top_frame.pack(pady=10)
+
+num_var = ctk.StringVar()
+
+ctk.CTkLabel(top_frame, text="Applicants:").grid(row=0, column=0, padx=5)
+ctk.CTkEntry(top_frame, textvariable=num_var, width=80).grid(row=0, column=1, padx=5)
+
+# ================= INPUT FRAME (HIDDEN INITIALLY) =================
+input_frame = ctk.CTkFrame(main_container)
+
+name_vars, loan_vars, rate_vars, time_vars, type_vars = [], [], [], [], []
+budget_var = ctk.StringVar()
+num_applicants = 0
+
+# ================= SUMMARY =================
+summary = ctk.CTkFrame(main_container)
+summary.pack(pady=10)
+
+label_budget = ctk.CTkLabel(summary, text="Budget: 0")
+label_approved = ctk.CTkLabel(summary, text="Approved: 0")
+label_rejected = ctk.CTkLabel(summary, text="Rejected: 0")
+label_profit = ctk.CTkLabel(summary, text="Profit: 0")
+
+label_budget.grid(row=0, column=0, padx=10)
+label_approved.grid(row=0, column=1, padx=10)
+label_rejected.grid(row=0, column=2, padx=10)
+label_profit.grid(row=0, column=3, padx=10)
+
+# ================= TABLE =================
+columns = ("Name", "Loan", "Rate", "Time", "Profit", "Status")
+table = ttk.Treeview(main_container, columns=columns, show="headings", height=8)
+
+for c in columns:
+    table.heading(c, text=c)
+    table.column(c, anchor="center", width=140)
+
+table.pack(pady=10)
+
+table.tag_configure("approved", foreground="green")
+table.tag_configure("rejected", foreground="red")
+
+# ================= RESTART FUNCTION =================
+def restart():
+    global num_applicants
+
+    confirm = messagebox.askyesno("Confirm", "Are you sure you want to restart?")
+
+    if not confirm:
+        return
+
+    for w in input_frame.winfo_children():
+        w.destroy()
+
+    for r in table.get_children():
+        table.delete(r)
+
+    num_var.set("")
+    budget_var.set("")
+    num_applicants = 0
+
+    name_vars.clear()
+    loan_vars.clear()
+    rate_vars.clear()
+    time_vars.clear()
+    type_vars.clear()
+
+    label_budget.configure(text="Budget: 0")
+    label_approved.configure(text="Approved: 0")
+    label_rejected.configure(text="Rejected: 0")
+    label_profit.configure(text="Profit: 0")
+
+    input_frame.pack_forget()
+
+    messagebox.showinfo("Restarted", "System has been reset successfully!")
+
+# ================= PROCESS =================
+def process():
+    data = []
+
+    try:
+        budget = int(budget_var.get())
+    except:
+        messagebox.showerror("Error", "Invalid Budget!")
+        return
+
+    for i in range(num_applicants):
+        try:
+            name = name_vars[i].get()
+            loan = int(loan_vars[i].get())
+            rate = float(rate_vars[i].get())
+            time = float(time_vars[i].get())
+            ttype = type_vars[i].get()
+        except:
+            messagebox.showerror("Error", f"Invalid row {i+1}")
+            return
+
+        if ttype == "Months":
+            time = time / 12
+
+        profit = (loan * rate * time) / 100
+
+        data.append({
+            "name": name,
+            "loan": loan,
+            "rate": rate,
+            "time": time,
+            "profit": profit
+        })
+
+    data.sort(key=lambda x: x["profit"], reverse=True)
+
+    selected = []
+    temp_budget = budget
+
+    for d in data:
+        if temp_budget >= d["loan"]:
+            selected.append(d)
+            temp_budget -= d["loan"]
+
+    for r in table.get_children():
+        table.delete(r)
+
+    approved, rejected, total_profit = [], [], 0
+
+    for d in data:
+        if d in selected:
+            approved.append(d)
+            total_profit += d["profit"]
+            status = "Approved"
+            tag = "approved"
+        else:
+            rejected.append(d)
+            status = "Rejected"
+            tag = "rejected"
+
+        table.insert("", "end",
+                     values=(d["name"], d["loan"], d["rate"],
+                             round(d["time"],2), round(d["profit"],2), status),
+                     tags=(tag,))
+
+    label_budget.configure(text=f"Budget: {budget}")
+    label_approved.configure(text=f"Approved: {len(approved)}")
+    label_rejected.configure(text=f"Rejected: {len(rejected)}")
+    label_profit.configure(text=f"Profit: {round(total_profit,2)}")
+
+    # PROCESS SUCCESS POPUP
+    messagebox.showinfo("Success", "Loan Processing Completed Successfully!")
+
+# ================= GENERATE =================
+def generate_fields():
+    global num_applicants
+
+    for w in input_frame.winfo_children():
+        w.destroy()
+
+    try:
+        n = int(num_var.get())
+    except:
+        messagebox.showerror("Error", "Enter valid number!")
+        return
+
+    num_applicants = n
+
+    name_vars.clear()
+    loan_vars.clear()
+    rate_vars.clear()
+    time_vars.clear()
+    type_vars.clear()
+
+    ctk.CTkLabel(input_frame, text="Name").grid(row=0, column=0)
+    ctk.CTkLabel(input_frame, text="Loan").grid(row=0, column=1)
+    ctk.CTkLabel(input_frame, text="Rate (%)").grid(row=0, column=2)
+    ctk.CTkLabel(input_frame, text="Time").grid(row=0, column=3)
+    ctk.CTkLabel(input_frame, text="Type").grid(row=0, column=4)
+
+    for i in range(n):
+        nv = ctk.StringVar()
+        lv = ctk.StringVar()
+        rv = ctk.StringVar()
+        tv = ctk.StringVar()
+        ttv = ctk.StringVar(value="Years")
+
+        name_vars.append(nv)
+        loan_vars.append(lv)
+        rate_vars.append(rv)
+        time_vars.append(tv)
+        type_vars.append(ttv)
+
+        ctk.CTkEntry(input_frame, textvariable=nv).grid(row=i+1, column=0, padx=5, pady=3)
+        ctk.CTkEntry(input_frame, textvariable=lv).grid(row=i+1, column=1, padx=5)
+        ctk.CTkEntry(input_frame, textvariable=rv).grid(row=i+1, column=2, padx=5)
+        ctk.CTkEntry(input_frame, textvariable=tv).grid(row=i+1, column=3, padx=5)
+        ctk.CTkOptionMenu(input_frame, values=["Years", "Months"], variable=ttv).grid(row=i+1, column=4)
+
+    ctk.CTkLabel(input_frame, text="Budget:").grid(row=n+1, column=0)
+    ctk.CTkEntry(input_frame, textvariable=budget_var).grid(row=n+1, column=1)
+
+    ctk.CTkButton(input_frame, text="Process Loan", command=process).grid(row=n+1, column=2)
+
+    # show input frame and push UI down
+    input_frame.pack(pady=10, before=summary)
+
+# ================= BUTTONS =================
+ctk.CTkButton(top_frame, text="Generate", command=generate_fields).grid(row=0, column=2, padx=10)
+
+# Restart button at bottom
+restart_btn = ctk.CTkButton(
+    main_container,
+    text=" Restart System",
+    command=restart,
+    width=200,
+    height=40
+)
+restart_btn.pack(pady=15)
+
+root.mainloop()
