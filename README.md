@@ -1,7 +1,7 @@
-## Smart Bank Loan System
+## Loan Approval System
 A Python-based GUI application that manages and processes multiple loan applications using a greedy algorithm to select the most profitable loans within a fixed budget.
 ## Project Description
-The Smart Bank Loan System is a desktop application built using Python and CustomTkinter. It allows users to enter multiple loan applicants, calculate profit for each application, and automatically decide loan approvals based on available budget constraints. The system helps in simulating real-world banking decision-making using an optimized algorithm approach.
+The Loan Approval System is a desktop application built using Python and CustomTkinter. It allows users to enter multiple loan applicants, calculate profit for each application, and automatically decide loan approvals based on available budget constraints. The system helps in simulating real-world banking decision-making using an optimized algorithm approach.
 ## Features 
 Dynamic input form for multiple applicants
 Automatic profit calculation for each loan
